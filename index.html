@@ -1,0 +1,297 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>Personality Quest</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#12304a;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none;font-family:"Trebuchet MS",Verdana,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#g{container-type:inline-size;position:relative;width:min(100%,calc(100dvh*16/9));aspect-ratio:16/9;background:#6ec6ff;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;top:0;left:0;right:0;display:none;gap:1.2cqw;align-items:center;justify-content:space-between;padding:.5cqw 1.5cqw;background:rgba(10,30,60,.6);color:#fff;font-weight:bold;font-size:2cqw}
+#hr{color:#ff6a7a;letter-spacing:.2cqw}
+#hud button{font:inherit;font-size:1.7cqw;padding:.3cqw 1cqw;border-radius:1cqw;border:0;background:#ffd24a;color:#5b2d00;margin-left:.5cqw}
+#qp{position:absolute;top:5cqw;left:3cqw;right:3cqw;display:none;background:rgba(255,255,255,.96);border:.4cqw solid #2a6fb0;border-radius:1.5cqw;padding:.8cqw 1.5cqw;text-align:center;color:#17324d}
+#qi{font-size:1.8cqw;color:#5b7a99;font-weight:bold;min-height:2cqw}
+#qt{font-size:2.6cqw;font-weight:bold;line-height:1.15}
+#fb{font-size:2.2cqw;font-weight:bold}
+.gj{color:#1a9c3c;font-size:2.4cqw}.ty{color:#d8322f;font-size:2.4cqw}
+.nx{font:inherit;font-size:2.4cqw;padding:.4cqw 2.5cqw;margin-left:1cqw;border:0;border-radius:2cqw;background:#4cd964;color:#06361a;box-shadow:0 .4cqw 0 #2a9b44}
+#tc{position:absolute;left:0;right:0;bottom:1.5cqw;display:none;justify-content:space-between;padding:0 2cqw;pointer-events:none}
+.gp{display:flex;gap:2cqw}
+.t{pointer-events:auto;touch-action:none;width:12cqw;height:12cqw;border-radius:50%;border:.5cqw solid #fff;background:rgba(255,255,255,.3);color:#fff;font-size:5cqw;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.t.on{background:rgba(255,255,255,.7)}
+#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,35,70,.92);color:#fff;text-align:center;z-index:5}
+.bx{max-width:92%;max-height:94%;overflow:auto;padding:1.5cqw}
+#ov h1{font-size:6.5cqw;margin:.5cqw 0;color:#ffd24a;text-shadow:.3cqw .3cqw 0 #c0561e}
+#ov h2{font-size:4cqw;margin:.5cqw}
+#ov p,#ov li{font-size:2.4cqw;margin:.6cqw}
+.b{display:block;margin:1cqw auto;min-width:26cqw;padding:1cqw 3cqw;font-family:inherit;font-size:3cqw;font-weight:bold;border:0;border-radius:3cqw;background:#ffd24a;color:#5b2d00;box-shadow:0 .6cqw 0 #c58a00;cursor:pointer}
+.sc{max-height:36cqw;overflow:auto;touch-action:pan-y}
+table{border-collapse:collapse;font-size:1.6cqw;text-align:left;margin:auto}
+td,th{border:1px solid #5a7fb0;padding:.4cqw .8cqw;vertical-align:top}
+th{background:#24508a}
+ol{text-align:left;display:inline-block}
+</style></head><body>
+<div id="g"><canvas id="cv" width="1600" height="900"></canvas>
+<div id="hud"><span id="sc"></span><span id="co"></span><span id="hr"></span><span id="lv"></span><span id="pr"></span><span><button id="bp" onclick="state==='play'?pause():resume()">Pause</button><button id="bs" onclick="togSnd()"></button></span></div>
+<div id="qp"><div id="qi"></div><div id="qt"></div><div id="fb"></div></div>
+<div id="tc"><span class="gp"><div class="t" id="tl">&#9664;</div><div class="t" id="tr">&#9654;</div></span><span class="gp"><div class="t" id="td">&#9660;</div><div class="t" id="tj">&#9650;</div></span></div>
+<div id="ov"></div></div>
+<script>
+const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d');
+const QS=[
+["Sarah studies every day and always finishes her homework before the deadline. She is …","hardworking","lazy","careless"],
+["Tom rarely speaks in class and prefers listening to others. He is …","quiet","talkative","bossy"],
+["Anna believes her team will win even though they lost the last three matches. She is …","optimistic","nervous","critical"],
+["Ben refuses to change his answer even after the teacher explains that it is wrong. He is …","stubborn","friendly","helpful"],
+["Mia invents a new board game using paper, buttons, and bottle caps. She is …","creative","careless","timid"],
+["Jack forgets to check his work and makes many mistakes because he does not pay attention. He is …","careless","careful","neat"],
+["Lily loves exploring caves and trying exciting outdoor activities. She is …","adventurous","quiet","restless"],
+["David feels worried and starts shaking before giving a speech. He is …","nervous","confident","funny"],
+["Emma believes she can give a good presentation and speaks clearly in front of the class. She is …","confident","timid","stubborn"],
+["Ryan tells jokes and makes all his classmates laugh. He is …","funny","critical","bossy"],
+["Kevin never wants to do his chores and spends all day lying on the sofa. He is …","lazy","hardworking","helpful"],
+["Sophie talks a lot and always has something to say. She is …","talkative","quiet","timid"],
+["Oliver always orders his friends around and insists that everyone follows his rules. He is …","bossy","friendly","optimistic"],
+["Grace keeps her desk clean and arranges all her books in the correct order. She is …","neat","restless","careless"],
+["Lucas often points out other people's mistakes and says their work is not good enough. He is …","critical","helpful","funny"],
+["Emma smiles at new students, greets them warmly, and makes them feel welcome. She is …","friendly","stubborn","nervous"],
+["Daniel looks both ways before crossing the road and checks his answers before submitting his test. He is …","careful","careless","adventurous"],
+["Amy is too shy to speak to new people and often hides behind her mother. She is …","timid","confident","talkative"],
+["Peter helps his classmates understand difficult questions and carries books for his teacher. He is …","helpful","lazy","bossy"],
+["Max keeps moving in his chair, tapping his feet, and getting up during the lesson. He is …","restless","neat","quiet"]];
+/* old word data (unused)
+const D={
+adventurous:{id:'suka berpetualang',m:'Likes to try new things and visit new places.',r:['I like to visit new places.','I like to try new food.','I like to go on trips.','I like to try new things.','I like to explore the forest.']},
+calm:{id:'tenang',m:'Does not get angry or worried easily.',r:['I do not get angry easily.','I do not worry much.','I can wait without getting angry.','I stay calm before a test.','I stay calm when things go wrong.']},
+careful:{id:'hati-hati',m:'Thinks before doing things and tries not to get things wrong.',r:['I check my work.','I read each question twice.','I look before I cross the road.','I carry eggs with care.','I think before I act.']},
+creative:{id:'kreatif',m:'Has new ideas and likes to make things.',r:['I have new ideas.','I make my own games.','I write my own stories.','I draw my own pictures.','I make new things from paper.']},
+flexible:{id:'mudah menyesuaikan diri',m:'Can change plans and try other ways.',r:['I can change my plans.','I am happy to try another way.','I can change the time of our game.','I am happy to do a different task.','I can follow a new plan.']},
+funny:{id:'lucu',m:'Makes people laugh.',r:['I make people laugh.','I tell funny stories.','I make funny faces.','I do funny dances.','I use funny voices.']},
+hardworking:{id:'pekerja keras',m:'Works a lot and tries hard.',r:['I study every day.','I do all my homework.','I work hard at school.','I keep trying when work is hard.','I work hard to finish my tasks.']},
+neat:{id:'rapi',m:'Keeps things clean and in the right place.',r:['I keep my room clean.','I put my books away.','I make my bed.','I keep my desk clean.','I put my clothes away.']},
+talkative:{id:'banyak bicara',m:'Likes to talk a lot.',r:['I talk a lot.','I tell many stories.','I ask lots of questions when we talk.','I like long talks.','I always have something to say.']},
+careless:{id:'ceroboh',m:'Does things without looking or thinking enough.',r:['I do not check my work.','I lose things because I do not take care.','I do not look where I walk.','I drop things because I do not look.','I do things without thinking.']},
+lazy:{id:'malas',m:'Does not like to work or do much.',r:['I do not want to work.','I do not want to do my homework.','I do not want to help with the cleaning.','I leave my work for later.','I want others to do my work.']},
+messy:{id:'berantakan',m:'Does not keep things clean or in the right place.',r:['I leave clothes on the floor.','I leave books all over my bed.','I leave my desk full of things.','I leave toys all over my room.','I do not put things away.']},
+nervous:{id:'gugup',m:'Feels worried or afraid about something.',r:['I worry about tests.','My hands shake before I speak in class.','I worry about getting things wrong.','My heart goes fast before a test.','I cannot relax before a test.']},
+quiet:{id:'pendiam',m:'Does not talk much.',r:['I do not talk much.','I listen more than I talk.','I say very little in class.','I do not talk much in groups.','I usually give short answers.']},
+serious:{id:'serius',m:'Thinks carefully and does not joke much.',r:['I do not joke when I work.','I do not laugh much.','I do not often say funny things.','I do not play when I work.','I think a lot about important things.']},
+stubborn:{id:'keras kepala',m:'Does not want to change ideas or plans.',r:['I do not want to change my plans.','I always want my own way.','I think I am always right.','I do not listen to other ideas.','I say no when people ask me to change.']},
+timid:{id:'penakut atau pemalu',m:'Is shy and gets afraid easily.',r:['I am shy with new people.','I am afraid to speak in class.','I am afraid to say hello first.','I am afraid to ask for help.','I feel shy in a big group.']},
+unimaginative:{id:'kurang imajinatif',m:'Finds it hard to think of new ideas.',r:['I find it hard to think of new ideas.','I copy pictures because I have no new ideas.','I cannot think of new games.','I find it hard to make up stories.','I cannot think of new things to make.']}};
+*/
+const LV=[
+{n:'Green Hills',a:0,b:7,s1:'#5bb8ff',s2:'#dff4ff',h1:'#8be07a',h2:'#62c257',g:'#9a5b2e',t:'#58c23d'},
+{n:'Sunny Forest',a:7,b:14,s1:'#8fd8ff',s2:'#fff3c4',h1:'#58b862',h2:'#2f9a4c',g:'#8a4f27',t:'#3fa84a'},
+{n:'Cloud Castle',a:14,b:20,s1:'#7f8cff',s2:'#ffd9f2',h1:'#c9b9ff',h2:'#a995f0',g:'#7a6aa8',t:'#c7b8ff'}];
+const CF={quiet:['timid','serious','nervous'],timid:['nervous'],careless:['messy','lazy'],messy:['lazy'],neat:['careful'],hardworking:['serious'],calm:['careful'],creative:['flexible','funny']};
+const bad=(a,b)=>(CF[a]||[]).includes(b)||(CF[b]||[]).includes(a);
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.random()*a.length|0],lc1=s=>s[0].toLowerCase()+s.slice(1);
+const ix=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+let S={score:0,coins:0,ft:0,missed:new Set(),lvl:0},snap,L,P,cam=0,T=0,state='menu',snd=true,K={l:0,r:0,j:0,jp:0},ret=null,cache={},last=0;
+/* ---------- audio ---------- */
+let AC=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,ty,v,t0,f2){if(!snd)return;const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+(t0||0);o.type=ty||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v||.06,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+function sfx(n){if(n==='jump')tone(320,.18,'square',.05,0,640);else if(n==='coin'){tone(988,.07,'square',.05);tone(1319,.14,'square',.05,.07)}else if(n==='ok')[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.12,i*.09));else if(n==='bad')tone(220,.35,'sawtooth',.08,0,90);else if(n==='stomp')tone(180,.12,'square',.07,0,60);else if(n==='hurt')tone(260,.3,'sawtooth',.07,0,80);else if(n==='win')[523,659,784,1047,1319].forEach((f,i)=>tone(f,.25,'triangle',.12,i*.12))}
+const M=[0,4,7,9,7,4,2,4,0,4,7,12,9,7,4,2];let mi=0;
+setInterval(()=>{if(state!=='play'||!snd||!AC)return;const n=M[mi++%16];tone(261.6*2**(n/12),.22,'triangle',.035);if(mi%2)tone(130.8*2**((mi%16<8?0:5)/12),.4,'sine',.05)},250);
+/* ---------- screens ---------- */
+function ov(h){$('ov').innerHTML='<div class="bx">'+h+'</div>';$('ov').style.display='flex'}
+function hide(){$('ov').style.display='none'}
+function ui(on){$('hud').style.display=$('qp').style.display=on?(on===2?'flex':'block'):'none';$('hud').style.display=on?'flex':'none'}
+function menu(){state='menu';ret=menu;ui(0);ov(`<h1>Personality Quest</h1><p>Guess the Personality! Jump, find coins, and answer 20 questions.</p><button class="b" onclick="play()">Play</button><button class="b" onclick="howto()">How to Play</button><button class="b" onclick="togSnd()">Sound: ${snd?'ON':'OFF'}</button>`)}
+function howto(){ov(`<h2>How to Play</h2><ol style="font-size:2.3cqw"><li>Move: Left / Right or A / D. On a phone, use the big buttons.</li><li>Jump: Space, Up or W. Press P to pause.</li><li>Read the question at the top.</li><li>Jump and hit the <b>bottom</b> of the best answer box.</li><li>Wrong answer = lose a heart. Try again!</li><li>Right answer = press Next to open the gate.</li><li>Do not fall in holes. Jump on turtles! Avoid spikes and chomper plants.</li><li>Stand on a green pipe with the arrow and press Down (or the ▼ button) to find a bonus room with coins.</li></ol><button class="b" onclick="ret()">Back</button>`)}
+function tbl(){return '<table><tr><th>Word</th><th>Indonesian</th><th>Meaning</th><th>Reasons</th></tr>'+Object.keys(D).map(k=>`<tr><td><b>${k}</b></td><td>${D[k].id}</td><td>${D[k].m}</td><td>${D[k].r.join('<br>')}</td></tr>`).join('')+'</table>'}
+function words(){ov('<h2>Word List</h2><div class="sc">'+tbl()+'</div><button class="b" onclick="ret()">Back</button>')}
+function pauseMenu(){ret=pauseMenu;ov(`<h2>Paused</h2><button class="b" onclick="resume()">Resume</button><button class="b" onclick="howto()">How to Play</button><button class="b" onclick="togSnd()">Sound: ${snd?'ON':'OFF'}</button><button class="b" onclick="menu()">Main Menu</button>`)}
+function pause(){if(state!=='play')return;state='paused';K.l=K.r=K.j=0;pauseMenu()}
+function resume(){if(state!=='paused')return;hide();state='play'}
+function togSnd(){snd=!snd;if(snd)ac();if(state==='menu')menu();else if(state==='paused')pauseMenu();hud()}
+function over(){state='over';ov(`<h2>Let's try again!</h2><p>You ran out of hearts.</p><button class="b" onclick="retryLv()">Try Level Again</button><button class="b" onclick="menu()">Main Menu</button>`)}
+function levelEnd(){state='done';sfx('win');if(S.lvl===LV.length-1){final();return}ov(`<h2>Level ${S.lvl+1} Complete!</h2><p>${LV[S.lvl].n}</p><p>Score: ${S.score} &nbsp; Coins: ${S.coins}</p><p>First try: ${S.ft-snap.ft} / ${L.st.length}</p><button class="b" onclick="startLevel(S.lvl+1)">Next Level</button>`)}
+function final(){state='done';ret=final;ui(0);ov(`<h1>You are a word star!</h1><p>First try: ${S.ft} / 20</p><p>Score: ${S.score} &nbsp; Coins: ${S.coins}</p><button class="b" onclick="play()">Play Again</button><button class="b" onclick="review()">Review Words</button>`)}
+function review(){const ks=[...S.missed];return ov('<h2>Review Words</h2>'+(ks.length?'<div class="sc"><table><tr><th>Question</th><th>Answer</th></tr>'+ks.map(i=>`<tr><td>${QS[i][0]}</td><td><b>${QS[i][1]}</b></td></tr>`).join('')+'</table></div>':'<p>You did not miss any question. Great!</p>')+'<button class="b" onclick="ret()">Back</button>');ov('<h2>Review Words</h2>'+(ks.length?'<div class="sc"><table><tr><th>Word</th><th>Indonesian</th><th>Meaning</th><th>Reasons</th></tr>'+ks.map(k=>`<tr><td><b>${k}</b></td><td>${D[k].id}</td><td>${D[k].m}</td><td>${D[k].r.join('<br>')}</td></tr>`).join('')+'</table></div>':'<p>You did not miss any word. Great!</p>')+'<button class="b" onclick="ret()">Back</button>')}
+function play(){ac();S={score:0,coins:0,ft:0,missed:new Set(),lvl:0};startLevel(0)}
+function startLevel(l){S.lvl=l;snap={sc:S.score,co:S.coins,ft:S.ft,ms:new Set(S.missed)};build(l);K={l:0,r:0,j:0,jp:0};cam=0;cache={};state='play';hide();ui(1);hud();panel()}
+function retryLv(){S.score=snap.sc;S.coins=snap.co;S.ft=snap.ft;S.missed=new Set(snap.ms);startLevel(S.lvl)}
+function hud(){const h=Math.max(L.hearts,0);$('sc').textContent='Score '+S.score;$('co').textContent='Coins '+S.coins;$('hr').textContent='\u2665'.repeat(h)+'\u2661'.repeat(5-h);$('lv').textContent='L'+(S.lvl+1)+' '+LV[S.lvl].n;$('pr').textContent='Q '+Math.min(L.qi+1,L.st.length)+'/'+L.st.length;$('bs').textContent=snd?'Sound ON':'Sound OFF'}
+function setT(id,h){if(cache[id]!==h){cache[id]=h;$(id).innerHTML=h}}
+function panel(){if(L.ug){setT('qi','Bonus room!');setT('qt','Collect the coins. Press Down on the pipe to go back.');setT('fb','');return}const st=L.st[L.qi];let a='',q='';if(!st)q='Great! Run to the flag!';else if(P.x<st.bx-380&&!L.wait)q='Walk right. A question is coming!';else{a=st.inst;q=st.q}setT('qi',a);setT('qt',q);setT('fb',L.fb)}
+/* ---------- level build ---------- */
+function buildUG(){const U=L.flag+700;L.U=U;
+ L.sol.push({x:U-30,y:0,w:30,h:380});
+ const ex={x:U+620,y:320,w:56,h:60,pipe:1,warp:1};L.sol.push(ex);
+ L.wp.to={x:U+60,y:300,ug:true};ex.to={x:L.wp.x+14,y:270,ug:false};
+ L.sol.push({x:U+230,y:290,w:110,h:18,p:1},{x:U+420,y:290,w:110,h:18,p:1});
+ for(let k=0;k<8;k++)L.coins.push({x:U+110+k*50,y:345});
+ for(let k=0;k<5;k++){L.coins.push({x:U+240+k*22,y:250});L.coins.push({x:U+430+k*22,y:250})}
+ for(let k=0;k<6;k++)L.coins.push({x:U+300+k*34,y:215-Math.sin(k*.5)*12})}
+function build(l){
+ const ws=QS.slice(LV[l].a,LV[l].b);
+ const n=ws.length,F=1450+(n-1)*2000+1260;L={w:F+1500,flag:F,ug:false,pl:[],sp:[],sol:[],pits:[],coins:[],en:[],st:[],qi:0,wait:false,hearts:5,cp:80,fb:'',fbT:0,fx:[]};
+ P={x:80,y:336,w:28,h:44,vx:0,vy:0,face:1,on:true,coy:0,buf:0,inv:0,t:0};
+ ws.forEach((qd,i)=>{
+  const bx=1450+i*2000,w=qd[1];
+  const ds=[qd[2],qd[3]];
+  
+  const box=shuf([w,...ds]).map((c,k)=>({x:bx+k*260-90,y:209,w:180,h:56,word:c,s:0,bump:0}));
+  const gate={x:bx+760,y:0,w:24,h:380,g:1,off:false};L.sol.push(gate);
+  L.st.push({bx,w,qi:LV[l].a+i,box,gate,done:false,wrong:false,
+   q:qd[0],
+   inst:'Choose the correct answer',
+   sen:qd[0].split(' ')[0]+' is '+w+'.'});
+  const sS=i?bx-1210:260,sE=bx-380;
+  const ty4=shuf(['pit','pipe',pick(['spk','tur','pipe']),pick(['spk','tur','pit'])]);let wd=false,pf=null;
+  ty4.forEach((t,k)=>{const s0=sS+40+k*195+(Math.random()*25|0);
+   if(t==='pit'){L.pits.push({x:s0,w:110});for(let j=0;j<5;j++)L.coins.push({x:s0+5+j*25,y:320-55*Math.sin(Math.PI*j/4)});pf=pf||s0}
+   else if(t==='spk'){L.sp.push({x:s0+20+(Math.random()*30|0),y:362,w:48,h:18});pf=pf||s0}
+   else if(t==='tur'){const a=s0+(Math.random()*20|0);L.en.push({x:a,y:358,w:30,h:22,a,b:a+130,d:Math.random()<.5?1:-1});pf=pf||s0}
+   else{const x=s0+30+(Math.random()*40|0),wp=i===2&&!wd;L.sol.push({x,y:320,w:56,h:60,pipe:1,warp:wp?1:0});if(wp){L.wp=L.sol[L.sol.length-1];wd=true}else L.pl.push({x:x+28,t:Math.random()*3,h:0});L.coins.push({x:x+8,y:268},{x:x+48,y:268},{x:x+28,y:236})}});
+  L.sol.push({x:pf+10,y:305,w:90,h:18,p:1});L.coins.push({x:pf+35,y:280},{x:pf+75,y:280},{x:pf+25,y:232},{x:pf+55,y:220},{x:pf+85,y:232});
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for(let k=0;k<3;k++)L.coins.push({x:bx-300+k*60,y:345});
+ });
+ buildUG();let x0=0;L.pits.forEach(p=>{L.sol.push({x:x0,y:380,w:p.x-x0,h:90,gr:1});x0=p.x+p.w});L.sol.push({x:x0,y:380,w:L.w-x0,h:90,gr:1});
+}
+/* ---------- physics ---------- */
+function step(h){
+ const p=P,ax=K.r-K.l;
+ if(K.jp){p.buf=.12;K.jp=0}
+ p.vx+=(ax*230-p.vx)*Math.min(1,h*16);if(ax)p.face=ax;
+ p.buf-=h;p.coy=p.on?.1:p.coy-h;
+ if(p.buf>0&&p.coy>0){p.vy=-640;p.buf=0;p.coy=0;p.on=false;sfx('jump')}
+ if(!K.j&&p.vy<-200)p.vy+=2600*h;
+ p.vy=Math.min(p.vy+1800*h,900);
+ const vb=p.vy,top0=p.y;
+ p.x+=p.vx*h;
+ for(const s of L.sol)if(!s.off&&ix(p,s)){p.x=p.vx>0?s.x-p.w:s.x+s.w;p.vx=0}
+ p.x=Math.max(0,Math.min(L.w-p.w,p.x));
+ p.y+=p.vy*h;p.on=false;
+ for(const s of L.sol)if(!s.off&&ix(p,s)){if(p.vy>0){p.y=s.y-p.h;p.on=true}else p.y=s.y+s.h;p.vy=0}
+ const st=L.st[L.qi];
+ if(st&&vb<0&&!st.done)for(const b of st.box)if(b.s===0&&p.x+p.w>b.x+10&&p.x<b.x+b.w-10&&top0>=b.y+b.h-6&&p.y<b.y+b.h){answer(b,st);break}
+}
+function answer(b,st){
+ P.y=b.y+b.h;P.vy=120;b.bump=.25;
+ if(b.word===st.w){
+  b.s=2;st.box.forEach(x=>{if(x.s===0)x.s=3});st.done=true;S.score+=10;if(!st.wrong)S.ft++;
+  L.cp=st.gate.x-80;L.wait=true;
+  L.fb=`<span class="gj">Great job! +10 \u2605</span><br>${st.sen} <button class="nx" onclick="nextQ()">Next</button>`;
+  sfx('ok');for(let i=0;i<12;i++)L.fx.push({x:b.x+b.w/2,y:b.y+10,vx:(Math.random()-.5)*320,vy:-Math.random()*320,l:1});hud();
+ }else{
+  b.s=1;st.wrong=true;S.missed.add(st.qi);L.hearts--;L.fb='<span class="ty">Try again!</span>';L.fbT=2.2;sfx('bad');hud();if(L.hearts<=0)over();
+ }
+}
+function nextQ(){if(!L.wait||state!=='play')return;L.wait=false;L.fb='';L.st[L.qi].gate.off=true;L.qi++;sfx('coin');hud()}
+function hurt(){if(P.inv>0)return false;L.hearts--;P.inv=1.5;sfx('hurt');hud();if(L.hearts<=0)over();return true}
+function update(dt){
+ P.t+=dt;T+=dt;
+ if(!L.wait){const n=Math.ceil(dt*120);for(let i=0;i<n&&state==='play';i++)step(dt/n)}
+ if(state!=='play')return;
+ P.inv=Math.max(0,P.inv-dt);
+ for(const e of L.en){if(e.dead)continue;e.x+=e.d*55*dt;if(e.x<e.a){e.x=e.a;e.d=1}if(e.x>e.b){e.x=e.b;e.d=-1}
+  if(ix(P,e)&&!L.wait){if(P.vy>0&&P.y+P.h-e.y<22){e.dead=1;P.vy=-430;sfx('stomp');for(let i=0;i<5;i++)L.fx.push({x:e.x+15,y:e.y,vx:(Math.random()-.5)*200,vy:-150,l:.8})}else if(hurt()){P.vy=-320;P.x+=P.x<e.x?-24:24}}}
+ for(const c of L.coins)if(!c.got&&Math.abs(P.x+14-c.x)<20&&Math.abs(P.y+22-c.y)<28){c.got=1;S.coins++;sfx('coin');hud()}
+ for(const st of L.st)for(const b of st.box)b.bump=Math.max(0,b.bump-dt);
+ for(const p of L.pl){p.t=(p.t+dt)%3.4;const t=p.t;p.h=t<.6?46*t/.6:t<1.8?46:t<2.4?46*(1-(t-1.8)/.6):0;if(p.h>10&&ix(P,{x:p.x-14,y:320-p.h,w:28,h:p.h})&&hurt()){P.vy=-350;P.x+=P.x<p.x?-30:30}}
+ for(const s of L.sp)if(ix(P,{x:s.x+4,y:s.y+8,w:s.w-8,h:s.h-8})&&hurt()){P.vy=-430;P.vx=-200*P.face}
+ if(K.dn&&P.on){for(const s of L.sol)if(s.warp&&Math.abs(P.x+14-s.x-28)<22&&Math.abs(P.y+P.h-320)<2){L.ug=s.to.ug;P.x=s.to.x;P.y=s.to.y;P.vx=P.vy=0;sfx('coin');break}}
+ K.dn=0;
+ L.fx.forEach(f=>{f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=600*dt;f.l-=dt*1.1});L.fx=L.fx.filter(f=>f.l>0);
+ if(L.fbT>0){L.fbT-=dt;if(L.fbT<=0&&!L.wait)L.fb=''}
+ if(P.y>520){L.hearts--;sfx('hurt');hud();if(L.hearts<=0){over();return}P.x=L.cp;P.y=300;P.vx=P.vy=0;P.inv=1.5}
+ if(!L.ug&&P.x+P.w>L.flag&&P.x<L.flag+300){levelEnd();return}
+ cam=L.ug?L.U:Math.max(0,Math.min(L.w-800,P.x-300));
+ panel();
+}
+/* ---------- drawing ---------- */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function cloud(x,y,s){ctx.fillStyle='rgba(255,255,255,.92)';[[0,0,22],[22,-8,28],[50,0,22],[25,6,24]].forEach(([a,b,r])=>{ctx.beginPath();ctx.arc(x+a*s,y+b*s,r*s,0,7);ctx.fill()})}
+function draw(){
+ const c=LV[S.lvl];ctx.setTransform(2,0,0,2,0,0);
+ const g=ctx.createLinearGradient(0,0,0,380);g.addColorStop(0,c.s1);g.addColorStop(1,c.s2);ctx.fillStyle=g;ctx.fillRect(0,0,800,450);
+ let o=cam*.25;for(let i=-1;i<4;i++)cloud(i*300-(o%300)+60,70+(((Math.floor(o/300)+i)%3+3)%3)*34,1);
+ [[.6,330,c.h2,200],[.4,430,c.h1,160]].forEach(([sp,k,col,r0])=>{o=cam*sp;for(let i=-1;i<=3;i++){const n=Math.floor(o/k)+i,r=r0+((n%3+3)%3)*40;ctx.fillStyle=col;ctx.beginPath();ctx.arc(i*k-(o%k)+80,390,r,Math.PI,0);ctx.fill()}});
+ if(L.ug){ctx.fillStyle='#1d1836';ctx.fillRect(0,0,800,450);ctx.fillStyle='rgba(255,255,255,.05)';for(let y=0;y<380;y+=40)for(let x=(y/40%2)*40;x<800;x+=80)ctx.fillRect(x,y,78,38)}
+ ctx.save();ctx.translate(-Math.round(cam),0);
+ if(!L.ug)for(let x=130;x<L.flag+500;x+=420){if(x<cam-60||x>cam+860||L.pits.some(p=>x>p.x-30&&x<p.x+p.w+30))continue;ctx.fillStyle='#7a4a1f';ctx.fillRect(x-6,350,12,30);ctx.fillStyle='#4cc04a';rr(x-22,300,44,60,20);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-7,326,6,0,7);ctx.arc(x+7,326,6,0,7);ctx.fill();ctx.fillStyle='#222';ctx.beginPath();ctx.arc(x-6,327,2.5,0,7);ctx.arc(x+8,327,2.5,0,7);ctx.fill()}
+ for(const p of L.pl){if(p.x<cam-40||p.x>cam+840||p.h<1)continue;const y=320-p.h;ctx.fillStyle='#2fa84f';ctx.fillRect(p.x-3,y+14,6,p.h);ctx.beginPath();ctx.ellipse(p.x-14,y+34,10,4,-.4,0,7);ctx.ellipse(p.x+14,y+34,10,4,.4,0,7);ctx.fill();ctx.fillStyle='#d9312f';ctx.beginPath();ctx.arc(p.x,y+12,17,0,7);ctx.fill();ctx.fillStyle='#fff';[[-9,4],[8,5],[0,-3]].forEach(a=>{ctx.beginPath();ctx.arc(p.x+a[0],y+6+a[1],3.5,0,7);ctx.fill()});ctx.fillStyle='#4a0d12';ctx.beginPath();ctx.ellipse(p.x,y+17,12,3+7*Math.abs(Math.sin(T*6)),0,0,7);ctx.fill();ctx.fillStyle='#fff';[-8,-2,4].forEach(a=>ctx.fillRect(p.x+a,y+13,4,4))}
+ for(const s of L.sol){if(s.off||s.x+s.w<cam||s.x>cam+800)continue;
+  if(s.gr){ctx.fillStyle=c.g;ctx.fillRect(s.x,380,s.w,90);ctx.fillStyle=c.t;ctx.fillRect(s.x,380,s.w,14);ctx.fillStyle='rgba(0,0,0,.3)';for(let y=394;y<450;y+=19)ctx.fillRect(s.x,y,s.w,2);for(let r=0,y=394;y<450;y+=19,r++){const a=Math.max(s.x,cam-40);for(let x=a-a%38+(r%2?19:0);x<Math.min(s.x+s.w,cam+840);x+=38)if(x>=s.x)ctx.fillRect(x,y,2,19)}}
+  else if(s.pipe){ctx.fillStyle='#1f8f3a';ctx.fillRect(s.x,s.y+14,s.w,s.h-14);ctx.fillStyle='#2fc255';ctx.fillRect(s.x+6,s.y+14,10,s.h-14);ctx.fillStyle='#1f8f3a';rr(s.x-5,s.y,s.w+10,18,4);ctx.fillStyle='#2fc255';rr(s.x-3,s.y+2,12,14,3);ctx.strokeStyle='#0d5a22';ctx.lineWidth=2;ctx.strokeRect(s.x-5,s.y,s.w+10,18);if(s.warp){ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 18px sans-serif';ctx.fillText('\u25BC',s.x+28,s.y-12+Math.sin(T*6)*3)}}else if(s.p){ctx.fillStyle='#b5651d';rr(s.x,s.y,s.w,s.h,4);ctx.fillStyle=c.t;ctx.fillRect(s.x,s.y,s.w,6)}
+  else{ctx.fillStyle='#a0612b';ctx.fillRect(s.x,0,s.w,380);ctx.fillStyle='#6e3d14';for(let y=0;y<380;y+=38)ctx.fillRect(s.x,y,s.w,4);ctx.fillRect(s.x+11,0,2,380);ctx.fillStyle='#ffd24a';rr(s.x+4,330,16,16,3)}}
+ for(const s of L.sp){if(s.x<cam-60||s.x>cam+840)continue;ctx.fillStyle='#d5dbe0';ctx.strokeStyle='#6b7480';ctx.lineWidth=1.5;for(let k=0;k<4;k++){ctx.beginPath();ctx.moveTo(s.x+k*12,380);ctx.lineTo(s.x+k*12+6,s.y);ctx.lineTo(s.x+k*12+12,380);ctx.closePath();ctx.fill();ctx.stroke()}}
+ for(const k of L.coins){if(k.got||k.x<cam-20||k.x>cam+820)continue;ctx.fillStyle='#ffc61a';ctx.beginPath();ctx.ellipse(k.x,k.y,Math.abs(Math.cos(T*4+k.x))*9+2,10,0,0,7);ctx.fill();ctx.strokeStyle='#c58a00';ctx.lineWidth=2;ctx.stroke()}
+ for(const st of L.st)for(const b of st.box){if(b.x>cam+800||b.x+b.w<cam)continue;
+  const by=b.y-Math.sin(b.bump/.25*Math.PI)*14,col=['#ffd24a','#ff6b6b','#4cd964','#cfd6dc'][b.s];
+  ctx.fillStyle=['#c58a00','#b02a2a','#1f9b3a','#9aa3ab'][b.s];rr(b.x,by+4,b.w,b.h,10);ctx.fillStyle=col;rr(b.x,by,b.w,b.h,10);
+  let fs=24;ctx.font='bold '+fs+'px "Trebuchet MS",Verdana,sans-serif';while(ctx.measureText(b.word).width>b.w-16&&fs>10){fs--;ctx.font='bold '+fs+'px "Trebuchet MS",Verdana,sans-serif'}
+  ctx.fillStyle=b.s===3?'#7a828a':'#3b2300';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.word,b.x+b.w/2,by+b.h/2+1)}
+ for(const e of L.en){if(e.dead||e.x<cam-40||e.x>cam+840)continue;ctx.save();ctx.translate(e.x+15,e.y);ctx.scale(e.d,1);ctx.fillStyle='#ffe9a8';ctx.fillRect(-12,18,7,5);ctx.fillRect(4,18,7,5);ctx.fillStyle='#ffd27a';ctx.beginPath();ctx.arc(13,8,6,0,7);ctx.fill();ctx.fillStyle='#222';ctx.beginPath();ctx.arc(15,6,1.8,0,7);ctx.fill();ctx.fillStyle='#2f9e44';ctx.beginPath();ctx.ellipse(-2,13,15,10,0,Math.PI,0);ctx.fill();ctx.fillStyle='#e8d9a0';ctx.fillRect(-17,13,30,5);ctx.strokeStyle='#1b6b2c';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-2,3);ctx.lineTo(-2,13);ctx.moveTo(-10,8);ctx.lineTo(6,8);ctx.stroke();ctx.restore();continue;ctx.fillStyle='#fff';[8,22].forEach(a=>{ctx.beginPath();ctx.arc(e.x+a,e.y+9,5,0,7);ctx.fill()});ctx.fillStyle='#222';[8,22].forEach(a=>{ctx.beginPath();ctx.arc(e.x+a+e.d*1.5,e.y+10,2.2,0,7);ctx.fill()})}
+ ctx.fillStyle='#ddd';ctx.fillRect(L.flag,140,6,240);ctx.fillStyle='#ffd24a';ctx.beginPath();ctx.arc(L.flag+3,138,7,0,7);ctx.fill();
+ ctx.fillStyle='#ff4d4d';ctx.beginPath();ctx.moveTo(L.flag+6,148);for(let i=0;i<=10;i++)ctx.lineTo(L.flag+6+i*6,148+Math.sin(T*5+i)*3+i*1.5);ctx.lineTo(L.flag+6,190);ctx.fill();
+ if(state!=='menu')drawP();
+ L.fx.forEach(f=>{ctx.globalAlpha=Math.max(0,f.l);ctx.fillStyle='#ffd24a';ctx.font='24px sans-serif';ctx.fillText('\u2605',f.x,f.y)});ctx.globalAlpha=1;
+ ctx.restore();
+}
+function drawP(){
+ const p=P;if(p.inv>0&&Math.floor(p.inv*12)%2)return;
+ ctx.save();ctx.translate(p.x+14,p.y);ctx.scale(p.face,1);
+ const sw=p.on&&Math.abs(p.vx)>20?Math.sin(p.t*16)*6:0,jp=!p.on;
+ ctx.fillStyle='#e8892b';rr(-19,20,11,17,3);
+ ctx.fillStyle='#6b3f1d';rr(-12+(jp?4:sw),35,12,9,4);rr(1+(jp?-3:-sw),jp?31:35,12,9,4);
+ ctx.fillStyle='#2f6fd6';rr(-11,28,22,10,3);
+ ctx.fillStyle='#ffd23f';rr(-11,19,22,13,5);
+ ctx.fillStyle='#2f6fd6';ctx.fillRect(-8,19,4,10);ctx.fillRect(4,19,4,10);
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(13,27+(jp?-8:-sw*.4),4.5,0,7);ctx.fill();
+ ctx.fillStyle='#ffd2a6';ctx.beginPath();ctx.arc(0,12,13,0,7);ctx.fill();
+ ctx.fillStyle='#f4a07a';ctx.beginPath();ctx.arc(11,15,4,0,7);ctx.fill();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(4,10,3.5,4.5,0,0,7);ctx.fill();ctx.fillStyle='#222';ctx.beginPath();ctx.arc(5.5,11,2,0,7);ctx.fill();
+ ctx.fillStyle='#f08a24';ctx.beginPath();ctx.arc(0,8,14,Math.PI,0);ctx.fill();
+ ctx.fillStyle='#c8661a';ctx.beginPath();ctx.ellipse(9,7,13,3.5,0,0,7);ctx.fill();
+ ctx.fillStyle='#2fae5a';ctx.fillRect(-14,3,28,3);
+ ctx.restore();
+}
+function drawOld(){
+ const p=P;if(p.inv>0&&Math.floor(p.inv*12)%2)return;
+ ctx.save();ctx.translate(p.x+14,p.y);ctx.scale(p.face,1);
+ const wk=p.on&&Math.abs(p.vx)>20,sw=wk?Math.sin(p.t*16)*6:0,jp=!p.on;
+ ctx.fillStyle='#e8892b';rr(-17,20,10,16,3);
+ ctx.fillStyle='#5a3a1e';rr(-9+(jp?3:sw),34,8,10,3);rr(2+(jp?-2:-sw),jp?30:34,8,10,3);
+ ctx.fillStyle='#3fae5a';rr(-11,19,22,18,6);
+ ctx.fillStyle='#ffd2a6';ctx.beginPath();ctx.arc(0,13,12,0,7);ctx.fill();
+ ctx.fillStyle='#b9772f';ctx.beginPath();ctx.ellipse(0,6,18,4,0,0,7);ctx.fill();ctx.beginPath();ctx.arc(0,5,11,Math.PI,0);ctx.fill();
+ ctx.fillStyle='#e23b3b';ctx.fillRect(-11,1,22,3);
+ ctx.fillStyle='#222';ctx.beginPath();ctx.arc(5,13,2,0,7);ctx.fill();
+ ctx.strokeStyle='#a0522d';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(4,16,4,.2,2.4);ctx.stroke();
+ ctx.restore();
+}
+/* ---------- loop & input ---------- */
+function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-last)/1000||0,.05);last=t;if(state==='menu'){cam=(t/25)%3000;T=t/1000}else if(state==='play')update(dt);else T+=0;draw()}
+addEventListener('keydown',e=>{const c=e.code;
+ if(c==='KeyP'){if(!e.repeat){if(state==='play')pause();else if(state==='paused')resume()}return}
+ if(c==='Enter'&&state==='play'&&L.wait){nextQ();return}
+ if(c==='ArrowLeft'||c==='KeyA')K.l=1;else if(c==='ArrowRight'||c==='KeyD')K.r=1;
+ else if(c==='Space'||c==='ArrowUp'||c==='KeyW'){if(!K.j)K.jp=1;K.j=1}else if(c==='ArrowDown'||c==='KeyS'){if(!K.d)K.dn=1;K.d=1}else return;
+ ac();if(state==='play')e.preventDefault()});
+addEventListener('keyup',e=>{const c=e.code;if(c==='ArrowLeft'||c==='KeyA')K.l=0;else if(c==='ArrowRight'||c==='KeyD')K.r=0;else if(c==='Space'||c==='ArrowUp'||c==='KeyW')K.j=0;else if(c==='ArrowDown'||c==='KeyS')K.d=0});
+addEventListener('blur',()=>{K.l=K.r=K.j=0;pause()});
+document.addEventListener('click',e=>{if(e.target.blur)e.target.blur()});
+document.addEventListener('touchmove',e=>{if(!e.target.closest('.sc'))e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+function bind(id,k){const e=$(id),on=v=>ev=>{ev.preventDefault();if(v){ac();if(k==='j'&&!K.j)K.jp=1;if(k==='d'&&!K.d)K.dn=1;e.classList.add('on')}else e.classList.remove('on');K[k]=v};
+ e.addEventListener('pointerdown',ev=>{try{e.setPointerCapture(ev.pointerId)}catch(x){}on(1)(ev)});
+ ['pointerup','pointercancel','lostpointercapture'].forEach(n=>e.addEventListener(n,on(0)))}
+bind('tl','l');bind('tr','r');bind('tj','j');bind('td','d');
+if(matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0)$('tc').style.display='flex';
+build(0);hud();menu();requestAnimationFrame(loop);
+</script></body></html>
